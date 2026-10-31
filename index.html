@@ -948,7 +948,7 @@ let armT=0;$('#reset').onclick=e=>{const b=e.currentTarget;if(!b.classList.conta
   $('#bet').value=S.bet;setRowsUI();build();bgDirty=true;renderRecent();muteIcon();renderSettings();updateUI();closeModals();toast('Progress reset — '+fmtInt(S.startBal)+' coins');syncCoinsUI();};
 $('#btnStats').onclick=()=>{const st=S.stats,net=r2(st.won-st.wagered);const rtp=st.wagered?(st.won/st.wagered*100).toFixed(1)+'%':'–';
   const items=[['Balls dropped',st.dropped.toLocaleString('en-US')],['Net',`<span class="${net>0?'pos':net<0?'neg':''}">${net>0?'+':''}${fmt(net)}</span>`],['Total bet',COIN+' '+fmt(st.wagered)],['Total won',COIN+' '+fmt(st.won)],
-    ['Best hit',st.best?st.best+'×':'–'],['Biggest win',st.biggest?COIN+' '+fmt(st.biggest):'–'],['Return',rtp],['Free refills',st.refills]];
+    ['Best hit',st.best?st.best+'×':'–'],['Biggest win',st.biggest?COIN+' '+fmt(st.biggest):'–'],['Your return',rtp],['Return setting',S.rtp+'%'],['Free refills',st.refills]];
   $('#statgrid').innerHTML=items.map(([k,v])=>`<div class="mini"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
   const B=[['<1×',0,1,0.5],['1–2×',1,2,1.4],['2–5×',2,5,3],['5–10×',5,10,8],['10–40×',10,40,25],['40×+',40,1e9,130]];const cnt=B.map(([,lo,hi])=>Object.entries(st.hits).reduce((a,[m,c])=>a+(+m>=lo&&+m<hi?c:0),0));const max=Math.max(1,...cnt);
   $('#hist').innerHTML=`<div class="lbl"><span>Hits by multiplier</span></div><div class="bars">${B.map((b,i)=>`<div class="bar" title="${b[0]}: ${cnt[i]}" style="height:${Math.max(2,cnt[i]/max*100)}%;background:${multCol(b[3])}"></div>`).join('')}</div><div class="lab">${B.map((b,i)=>`<span>${b[0]}<br>${cnt[i].toLocaleString('en-US')}</span>`).join('')}</div>`;
