@@ -147,6 +147,7 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line2);border-bottom-wi
 .chip{height:24px;padding:0 9px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--muted);font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.02em}.chip.on{background:rgba(124,92,255,.25);border-color:rgba(124,92,255,.7);color:#fff}
 #autoStatus{margin-left:6px;color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0}
 .seg{display:flex;gap:3px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06);border:1px solid var(--line);flex:0 0 auto}.seg button{height:32px;padding:0 11px;border-radius:8px;border:0;background:transparent;color:var(--muted);font-weight:800;cursor:pointer}.seg button.on{background:#7c5cff;color:#fff}
+.rtpset{align-items:center}.rtpset button{font-size:18px;min-width:38px}.rtpset button:disabled{opacity:.35;cursor:default}.rtpset span{min-width:48px;text-align:center;font-weight:900;font-variant-numeric:tabular-nums}
 .statgrid .mini.cur{border-color:rgba(124,92,255,.8);background:rgba(124,92,255,.14)}
 .setrow .t{font-weight:700}.setrow .d{font-size:12px;color:var(--muted);margin-top:2px}
 .toggle{width:50px;height:30px;border-radius:99px;background:rgba(255,255,255,.12);border:0;position:relative;cursor:pointer;flex:none;transition:background .2s}
@@ -268,7 +269,7 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line2);border-bottom-wi
     <div id="infoBars" class="ibars"></div>
     <div class="lbl" style="margin-top:14px"><span>Return to player · every board</span></div>
     <div class="statgrid" id="infoRtpTable"></div>
-    <p class="note">The top prize grows with the board (29× on 8 rows up to 130× on 16) because edges get rarer with every row. That keeps every board at about 97% with roughly two-thirds of the slots paying 1× or more. Coins are pretend and can't be bought or cashed out.</p>
+    <p class="note">The top prize grows with the board because edges get rarer with every row. Every board pays back the return you pick in Settings (97% unless you change it), to within 0.05 percentage points. Coins are pretend and can't be bought or cashed out.</p>
   </div>
 </div></div>
 
@@ -284,6 +285,7 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line2);border-bottom-wi
     <div class="setrow"><div><div class="t">Ball collisions</div><div class="d">Balls bump into each other, pachinko style. Off = every ball falls on its own.</div></div><button class="toggle" id="tCollide"></button></div>
     <div class="setrow"><div><div class="t">Drop height</div><div class="d">How far above the pegs balls start falling</div></div><div class="seg" id="dropH"><button data-h="low">Low</button><button data-h="medium">Med</button><button data-h="high">High</button></div></div>
     <div class="setrow"><div><div class="t">Celebrations</div><div class="d">Confetti, glow and shake on big hits</div></div><button class="toggle" id="tFx"></button></div>
+    <div class="setrow"><div><div class="t">Return</div><div class="d" id="rtpD">How much the game pays back over time. Lower is harder.</div></div><div class="seg rtpset" id="rtpSet"><button data-rtp="-1" aria-label="Lower return">−</button><span id="rtpVal">97%</span><button data-rtp="1" aria-label="Higher return">+</button></div></div>
     <div class="setrow"><div><div class="t">Coins</div><div class="d" id="coinsD">Set your balance to any amount</div></div><div class="numset"><input id="coinsIn" inputmode="numeric" autocomplete="off" aria-label="Coins"><button class="sbtn" id="coinsSet">Set</button></div></div>
     <div class="setrow"><div><div class="t">Starting balance</div><div class="d" id="startD">Used by Reset, and Refill tops you back up to it</div></div><div class="numset"><input id="startIn" inputmode="numeric" autocomplete="off" aria-label="Starting balance"><button class="sbtn" id="startSet">Save</button></div></div>
     <div class="setrow"><div><div class="t">Reset progress</div><div class="d" id="resetD">Back to 1,000 coins. Clears items and stats.</div></div><button class="danger" id="reset">Reset</button></div>
@@ -310,17 +312,20 @@ function fmt(n){n=r2(n);const a=Math.abs(n);
   return n.toLocaleString('en-US',{maximumFractionDigits:2});}
 const fmtM=m=>(m<10&&m%1?m:m)+'×';
 
-/* ---------- Multiplier tables (outer → inner; center 0.2 added for odd slot counts) ---------- */
-/* Tuned from measured physics runs (50,000 balls per row count per traffic pattern, ball collisions on), so typical
-   auto-drop play returns ~97% and no measured pattern exceeds 100%. 8 rows was dropped: see 'How it works'. */
-/* Multipliers, edge -> center (mirrored). The top prize grows with the board (29x on 8 rows up to 130x on 16), like real
-   online Plinko, so every board has about 60-75% of its slots paying 1x or more and each table returns ~97% on the exact
-   binomial odds (see oddsFor). Ladders are smooth: ratios shrink steadily toward the center. */
-const HALF={"8":[29,4,1.2,0.4,0.2],"9":[41,8,1.9,0.5,0.2],"10":[55,11,2.5,1.1,0.3,0.2],"11":[70,20,4.5,1.4,0.4,0.2],"12":[85,22,6,2,0.7,0.4,0.3],"13":[100,30,10,3,1.2,0.5,0.2],"14":[110,33,10,3.5,1.6,0.7,0.5,0.4],"15":[120,36,11,4,2,1.1,0.6,0.5],"16":[130,40,14,5,2.4,1.3,0.8,0.6,0.5]};
-function multsFor(rows){const h=HALF[rows];return Array.from({length:rows+1},(_,k)=>h[Math.min(k,rows-k)]);}
+/* ---------- Multiplier tables ---------- */
+/* Multipliers, edge -> center (mirrored), one table per return setting (90-99%) and row count (8-16).
+   Shape: the top prize grows with the board, like real online Plinko, and ladders shrink toward the center.
+   Every table's exact return on the binomial odds (see oddsFor) is within 0.05 percentage points of its setting.
+   Values are "nice": whole numbers from 10x, one decimal from 1x to 10x, two decimals below 1x.
+   Generated by tools/rtp_tables.py (see docs/payout-tables.md); the 97% set is the original tables, lightly adjusted. */
+const RTP_TABLES={"90":{"8":[27,3.8,1.1,0.37,0.18],"9":[38,7.4,1.8,0.44,0.19],"10":[51,10,2.3,1,0.29,0.2],"11":[65,18,4.2,1.3,0.38,0.19],"12":[79,20,5.5,1.9,0.65,0.37,0.28],"13":[93,28,9.3,2.8,1.1,0.46,0.19],"14":[102,31,9.4,3.2,1.5,0.65,0.46,0.37],"15":[111,33,10,3.7,1.9,1,0.57,0.46],"16":[121,37,13,4.6,2.2,1.2,0.74,0.57,0.46]},"91":{"8":[27,3.8,1.1,0.38,0.2],"9":[38,7.5,1.8,0.46,0.19],"10":[51,11,2.3,1,0.28,0.18],"11":[66,19,4.1,1.3,0.39,0.19],"12":[80,20,5.6,1.9,0.66,0.38,0.28],"13":[94,28,9.4,2.8,1.1,0.47,0.2],"14":[103,31,9.3,3.3,1.5,0.66,0.47,0.37],"15":[113,35,10,3.8,1.9,1,0.56,0.48],"16":[122,38,13,4.7,2.3,1.2,0.74,0.57,0.47]},"92":{"8":[28,3.9,1.1,0.37,0.2],"9":[39,7.6,1.8,0.47,0.19],"10":[52,10,2.3,1.1,0.29,0.18],"11":[66,19,4.3,1.3,0.39,0.19],"12":[81,21,5.7,1.9,0.66,0.38,0.28],"13":[95,28,9.6,2.9,1.1,0.48,0.19],"14":[104,31,9.5,3.3,1.5,0.67,0.48,0.38],"15":[114,34,10,3.8,2,1,0.57,0.48],"16":[123,38,13,4.8,2.3,1.2,0.76,0.58,0.47]},"93":{"8":[28,3.8,1.2,0.37,0.18],"9":[39,7.7,1.8,0.49,0.19],"10":[53,11,2.5,1,0.27,0.19],"11":[67,19,4.3,1.4,0.38,0.18],"12":[81,21,5.8,1.9,0.68,0.38,0.29],"13":[96,29,9.6,3,1.1,0.48,0.19],"14":[105,32,9.6,3.4,1.5,0.68,0.48,0.38],"15":[115,35,10,3.8,1.9,1.1,0.58,0.47],"16":[125,38,13,4.8,2.4,1.2,0.77,0.58,0.48]},"94":{"8":[28,3.9,1.2,0.38,0.18],"9":[40,7.8,1.8,0.48,0.2],"10":[53,11,2.3,1.1,0.28,0.19],"11":[68,19,4.3,1.4,0.38,0.2],"12":[82,21,5.9,1.9,0.69,0.39,0.29],"13":[97,29,9.7,2.9,1.2,0.47,0.19],"14":[107,32,9.6,3.3,1.6,0.68,0.48,0.39],"15":[116,35,11,3.9,1.9,1.1,0.57,0.48],"16":[126,39,14,4.8,2.3,1.3,0.76,0.58,0.48]},"95":{"8":[28,3.9,1.2,0.39,0.2],"9":[40,7.7,1.9,0.48,0.2],"10":[54,11,2.3,1.1,0.3,0.19],"11":[69,20,4.3,1.4,0.39,0.19],"12":[83,22,6,1.9,0.69,0.39,0.29],"13":[98,29,9.7,2.9,1.2,0.49,0.2],"14":[108,32,9.8,3.4,1.6,0.69,0.48,0.39],"15":[118,34,11,3.9,1.9,1.1,0.59,0.49],"16":[127,39,14,4.8,2.3,1.3,0.78,0.59,0.49]},"96":{"8":[29,4,1.2,0.38,0.2],"9":[41,8,1.9,0.48,0.19],"10":[54,11,2.4,1.1,0.29,0.21],"11":[69,20,4.4,1.4,0.39,0.2],"12":[84,22,5.9,2,0.69,0.39,0.3],"13":[99,30,9.9,3,1.2,0.49,0.19],"14":[109,33,9.9,3.5,1.6,0.68,0.49,0.4],"15":[119,36,11,3.9,2,1.1,0.59,0.49],"16":[129,40,14,4.9,2.4,1.3,0.79,0.59,0.49]},"97":{"8":[29,4,1.2,0.41,0.19],"9":[41,8.1,1.9,0.5,0.19],"10":[55,11,2.5,1.1,0.3,0.19],"11":[70,20,4.5,1.4,0.4,0.2],"12":[85,22,6,2,0.7,0.4,0.3],"13":[100,30,10,3,1.2,0.5,0.2],"14":[110,33,9.8,3.5,1.6,0.71,0.5,0.4],"15":[120,36,11,4,2,1.1,0.6,0.5],"16":[130,40,14,5,2.4,1.3,0.8,0.6,0.5]},"98":{"8":[29,4,1.2,0.42,0.21],"9":[41,8.1,1.9,0.5,0.21],"10":[55,11,2.5,1.1,0.32,0.2],"11":[71,20,4.6,1.4,0.4,0.21],"12":[86,22,6.1,2,0.71,0.41,0.3],"13":[101,30,10,3.1,1.2,0.51,0.2],"14":[111,33,10,3.5,1.6,0.71,0.52,0.4],"15":[121,36,11,4.1,2,1.1,0.61,0.51],"16":[131,40,14,5.1,2.4,1.3,0.81,0.61,0.51]},"99":{"8":[30,4.1,1.2,0.41,0.21],"9":[42,8.2,1.9,0.51,0.21],"10":[56,11,2.4,1.2,0.31,0.19],"11":[71,21,4.6,1.4,0.41,0.2],"12":[87,22,6.1,2.1,0.71,0.4,0.31],"13":[102,31,10,3.1,1.2,0.53,0.2],"14":[112,34,10,3.6,1.6,0.73,0.51,0.41],"15":[123,38,11,4.1,2.1,1.1,0.61,0.51],"16":[133,41,14,5.1,2.5,1.3,0.82,0.61,0.52]}};
+const RTP_MIN=90,RTP_MAX=99,RTP_DEFAULT=97;
+const HALF=RTP_TABLES[RTP_DEFAULT];
+const curRtp=()=>(typeof S!=='undefined'&&RTP_TABLES[S.rtp])?S.rtp:RTP_DEFAULT;
+function multsFor(rows,rtp){const h=RTP_TABLES[rtp||curRtp()][rows];return Array.from({length:rows+1},(_,k)=>h[Math.min(k,rows-k)]);}
 /* exact odds: one fair 50/50 per row, so slot k (k rights out of n rows) has probability C(n,k)/2^n */
 function oddsFor(n){const p=[];let c=1;for(let k=0;k<=n;k++){p.push(c/2**n);c=c*(n-k)/(k+1);}return p;}
-const rtpFor=n=>{const p=oddsFor(n),m=multsFor(n);return p.reduce((a,x,k)=>a+x*m[k],0);};
+const rtpFor=(n,rtp)=>{const p=oddsFor(n),m=multsFor(n,rtp);return p.reduce((a,x,k)=>a+x*m[k],0);};
 
 /* color by multiplier (log scale, cool → hot) */
 const STOPS=[[0,[45,212,255]],[.28,[99,122,255]],[.5,[190,92,255]],[.68,[255,79,150]],[.84,[255,122,47]],[1,[255,214,63]]];
@@ -331,20 +336,20 @@ const multCol=(m,a=1)=>{const c=multRGB(m);return `rgba(${c[0]},${c[1]},${c[2]},
 /* ---------- Persistent state ---------- */
 const KEY='plinko.justforfun.v1';
 const MAXCOINS=1e12;
-const DEF={balance:1000,startBal:1000,bet:10,rows:16,muted:false,fx:true,collide:true,dropH:'high',autoFast:false,inflight:[],
+const DEF={balance:1000,startBal:1000,bet:10,rows:16,rtp:RTP_DEFAULT,muted:false,fx:true,collide:true,dropH:'high',autoFast:false,inflight:[],
   owned:{ball:['classic'],board:['classic'],bg:['midnight'],trail:['none']},
   equip:{ball:'classic',board:'classic',bg:'midnight',trail:'none'},
   stats:{dropped:0,wagered:0,won:0,best:0,biggest:0,refills:0,hits:{}},recent:[]};
 const clone=o=>JSON.parse(JSON.stringify(o));
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const r=JSON.parse(raw);const s=clone(DEF);
   for(const k in r){if(k in s&&typeof s[k]==='object'&&!Array.isArray(s[k])&&r[k]&&typeof r[k]==='object')Object.assign(s[k],r[k]);else if(k in s)s[k]=r[k];}
-  if(!(s.balance>=0))s.balance=0; if(!(Number.isInteger(s.startBal)&&s.startBal>=1&&s.startBal<=MAXCOINS))s.startBal=1000; if(!HALF[s.rows])s.rows=16; if(!['low','medium','high'].includes(s.dropH))s.dropH='high'; return s;}}catch(e){} return clone(DEF);}
+  if(!(s.balance>=0))s.balance=0; if(!(Number.isInteger(s.startBal)&&s.startBal>=1&&s.startBal<=MAXCOINS))s.startBal=1000; if(!HALF[s.rows])s.rows=16; if(!RTP_TABLES[s.rtp])s.rtp=RTP_DEFAULT; if(!['low','medium','high'].includes(s.dropH))s.dropH='high'; return s;}}catch(e){} return clone(DEF);}
 let S=load();
 const fmtInt=n=>Math.round(n).toLocaleString('en-US');
 let saveT=0;
 /* Balls still falling when the page closes are saved as (bet, assigned slot) only. Their results were already decided at
    drop time, so on the next visit they are simply paid out: no refund, nothing lost. */
-function save(final){clearTimeout(saveT);const doit=()=>{try{S.inflight=balls.filter(b=>!b.landed).map(b=>({bet:b.bet,k:b.k,rows:b.rows}));
+function save(final){clearTimeout(saveT);const doit=()=>{try{S.inflight=balls.filter(b=>!b.landed).map(b=>({bet:b.bet,k:b.k,rows:b.rows,m:b.m}));
   localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
   if(final)doit();else saveT=setTimeout(doit,150);}
 addEventListener('pagehide',()=>save(true));
@@ -444,17 +449,21 @@ const BG={
    animates it: a gentle sideways "guide" force (never vertical) nudges the ball toward the peg side its path says,
    so ball-ball collisions jostle it but the guide always brings it back. Lengths below are in peg spacings s. */
 const PHYS={g:30,e:0.36,fr:0.1,drag:0.6,pegR:0.11,ballR:0.28,vs:0.9,wall:0.11,dt:1/240,bbE:0.15,bbIter:2,
-  stillWin:2,stillDist:0.3,stillN:2,maxT:40,dropMax:3.2,aim:0.3,K:300,C:34,Kend:300,Cend:35,amax:100,jit:0.04,calm:3,devOn:0.85,devOff:0.3,over:0.12,slackOn:2.01,phaseAt:-0.3};
+  stillWin:2,stillDist:0.3,stillN:2,maxT:40,dropMax:3.2,funnel:1.6,slotPad:0.08,amaxEnd:220,aim:0.3,K:300,C:34,Kend:300,Cend:35,amax:100,jit:0.04,calm:3,devOn:0.85,devOff:0.3,over:0.12,slackOn:2.01,phaseAt:-0.3};
 const DROP_H={low:1.1,medium:2.1,high:3.2}; /* spawn height above the top peg row, in peg spacings */
 function makeBoard(rows,P){const W=1000,s=W/(rows+3),top0=s*(P.dropMax+1.05),vs=s*P.vs,pegR=s*P.pegR,ballR=s*P.ballR;const pegs=[];
   for(let r=0;r<rows;r++){const y=top0+r*vs,n=r+3,row=[];for(let j=0;j<n;j++)row.push({x:W/2+(j-(n-1)/2)*s,y,f:0});pegs.push(row);}
-  const slotY=top0+(rows-1)*vs+s*.6;
-  const wx=r=>((r+2)/2)*s+P.wall*s,yT=top0-(P.dropMax+0.9)*s,yB=slotY;const xr0=wx(0),xrB=wx((yB-top0)/vs);
-  const walls=[{x1:W/2-xr0,y1:yT,x2:W/2-xr0,y2:top0},{x1:W/2-xr0,y1:top0,x2:W/2-xrB,y2:yB},
-               {x1:W/2+xr0,y1:yT,x2:W/2+xr0,y2:top0},{x1:W/2+xr0,y1:top0,x2:W/2+xrB,y2:yB}];
+  /* Win slots span the full board width. Peg spacing s and ball size are unchanged; slots get their own, wider pitch sp,
+     and a short funnel below the last peg row lets each ball drift out to its (already decided) slot. */
+  const sp=(W-2*(P.wall+P.slotPad)*s)/(rows+1),yP=top0+(rows-1)*vs+s*.6,slotY=yP+s*P.funnel;
+  const slotX=k=>W/2+(k-rows/2)*sp;
+  const wx=r=>((r+2)/2)*s+P.wall*s,yT=top0-(P.dropMax+0.9)*s;const xr0=wx(0),xrP=wx((yP-top0)/vs),xrS=(rows+1)/2*sp+P.wall*s;
+  const walls=[{x1:W/2-xr0,y1:yT,x2:W/2-xr0,y2:top0},{x1:W/2-xr0,y1:top0,x2:W/2-xrP,y2:yP},{x1:W/2-xrP,y1:yP,x2:W/2-xrS,y2:slotY},
+               {x1:W/2+xr0,y1:yT,x2:W/2+xr0,y2:top0},{x1:W/2+xr0,y1:top0,x2:W/2+xrP,y2:yP},{x1:W/2+xrP,y1:yP,x2:W/2+xrS,y2:slotY}];
   /* x of the wall line at height y (for keeping crowd-pushed balls from being squeezed through a wall) */
-  const wallX=y=>y<=top0?xr0:xr0+(xrB-xr0)*Math.min(1,(y-top0)/(yB-top0)),sec=Math.hypot(1,(xrB-xr0)/(yB-top0));
-  return{W,s,top0,vs,pegR,ballR,rows,pegs,slotY,walls,g:P.g*s,yT,wallX,sec};}
+  const wallX=y=>y<=top0?xr0:y<=yP?xr0+(xrP-xr0)*(y-top0)/(yP-top0):xrP+(xrS-xrP)*Math.min(1,(y-yP)/(slotY-yP));
+  const sec=Math.hypot(1,(xrP-xr0)/(yP-top0)),secF=Math.hypot(1,(xrS-xrP)/(slotY-yP));
+  return{W,s,sp,top0,vs,pegR,ballR,rows,pegs,yP,slotY,slotX,walls,g:P.g*s,yT,wallX,sec,secF};}
 /* path: array of -1/+1 (left/right) per row, already decided. k = assigned slot = number of rights. */
 function makeBall(B,path,dropH,jit){const c=[0];for(let i=0;i<path.length;i++)c.push(c[i]+path[i]);
   const x=B.W/2+(jit||0)*B.s,y=B.top0-dropH*B.s;
@@ -473,7 +482,7 @@ function guide(B,b,P){const s=B.s,u=(b.y-B.top0)/B.vs,rd=B.ballR+B.pegR,lx=(b.x-
     const q=pegNear(rb);let d=sideFor(rb,q);const off=lx-q;if(off*d<0&&Math.abs(off)>P.over)d=-d; /* never force a ball back over a peg top */
     xt=q+d*.5;}
   else{const rp=u<0?0:Math.ceil(u);
-    if(rp>=B.rows){end=true;xt=b.c[B.rows]*.5;}                                         /* below the pegs: straight into the assigned slot */
+    if(rp>=B.rows){end=true;xt=(B.slotX(b.k)-B.W/2)/s;}                                         /* below the pegs: straight into the assigned slot */
     else{const q=rp===0?0:pegNear(rp);xt=q+sideFor(rp,q)*P.aim;}}                       /* falling: line up to clip the next peg on the chosen side */
   { /* off course, or close to the edge of what can still reach its slot? stop colliding with other balls until it's safe */
     const rr=u<0?0:Math.min(B.rows,Math.round(u)),dev=Math.abs(lx-b.c[rr]*.5),slack=(B.rows-rr)*.5-Math.abs(kx-lx);
@@ -481,8 +490,8 @@ function guide(B,b,P){const s=B.s,u=(b.y-B.top0)/B.vs,rd=B.ballR+B.pegR,lx=(b.x-
     /* last-resort safety net: if the slot could no longer be reached by bouncing (rare), the ball slips past pegs while
        the guide carries it over, so it can never land anywhere but its assigned slot */
     if(rr<B.rows&&slack<P.phaseAt&&!b.phase){b.phase=true;}}
-  if(b.phase){xt=kx;end=true;}
-  if(u>B.rows-1-P.calm-.5)end=true;xt=B.W/2+xt*s;const K=end?P.Kend:P.K,C=end?P.Cend:P.C;let ax=K*(xt-b.x)-C*b.vx;const am=P.amax*s;if(ax>am)ax=am;else if(ax<-am)ax=-am;b.vx+=ax*P.dt;b.ax=ax/s;}
+  if(b.phase){xt=u>B.rows-1?(B.slotX(b.k)-B.W/2)/s:kx;end=true;}
+  if(u>B.rows-1-P.calm-.5)end=true;xt=B.W/2+xt*s;const K=end?P.Kend:P.K,C=end?P.Cend:P.C;let ax=K*(xt-b.x)-C*b.vx;const am=(u>B.rows-1?P.amaxEnd:P.amax)*s;if(ax>am)ax=am;else if(ax<-am)ax=-am;b.vx+=ax*P.dt;b.ax=ax/s;}
 function moveBall(B,b,P,onHit){const dt=P.dt;b.age+=dt;guide(B,b,P);b.vy+=B.g*dt;const k=1-P.drag*dt;b.vx*=k;b.vy*=k;b.x+=b.vx*dt;b.y+=b.vy*dt;
   const rd=B.ballR+B.pegR,ri=Math.round((b.y-B.top0)/B.vs);
   if(!b.phase)for(let r=Math.max(0,ri-1);r<=Math.min(B.rows-1,ri+1);r++){const row=B.pegs[r];for(let j=0;j<row.length;j++){const p=row[j];const dx=b.x-p.x,dy=b.y-p.y;
@@ -498,13 +507,13 @@ function ballContacts(B,balls,P,onBall){const D=2*B.ballR,D2=D*D,n=balls.length,
     const corr=(D-d)*0.5;a.x-=nx*corr;a.y-=ny*corr;b.x+=nx*corr;b.y+=ny*corr;
     const rvx=b.vx-a.vx,rvy=b.vy-a.vy,vn=rvx*nx+rvy*ny;if(vn<0){const jn=-(1+P.bbE)*vn*0.5;a.vx-=jn*nx;a.vy-=jn*ny;b.vx+=jn*nx;b.vy+=jn*ny;
       const tx=-ny,ty=nx,vt=rvx*tx+rvy*ty,jt=vt*P.fr*0.5;a.vx+=jt*tx;a.vy+=jt*ty;b.vx-=jt*tx;b.vy-=jt*ty;if(it===0&&onBall)onBall(a,b,-vn/B.s);}}}}}
-const slotOf=(B,b)=>{const k=Math.round((b.x-B.W/2)/B.s+B.rows/2);return k<0?0:k>B.rows?B.rows:k;};
+const slotOf=(B,b)=>{const k=Math.round((b.x-B.W/2)/B.sp+B.rows/2);return k<0?0:k>B.rows?B.rows:k;};
 /* one fixed substep. onLand(ball, physicalSlot, forced) fires when a ball reaches the slots; the payout always uses ball.k.
    Jam failsafe: a ball that makes less than stillDist of downward progress in each of stillN windows of stillWin sim-seconds
    stops touching other balls (shown faded) and falls through the jam. */
 function stepWorld(B,balls,P,collisions,onHit,onLand,onBall){for(const b of balls)if(!b.landed)moveBall(B,b,P,onHit);
   if(collisions&&balls.length>1)ballContacts(B,balls,P,onBall);
-  for(const b of balls){if(b.landed)continue;const dx=b.x-B.W/2,lim=B.wallX(b.y)-B.ballR*(b.y>B.top0?B.sec:1);
+  for(const b of balls){if(b.landed)continue;const dx=b.x-B.W/2,lim=B.wallX(b.y)-B.ballR*(b.y>B.yP?B.secF:b.y>B.top0?B.sec:1);
     if(dx>lim){b.x=B.W/2+lim;if(b.vx>0)b.vx=-b.vx*P.e;}else if(dx<-lim){b.x=B.W/2-lim;if(b.vx<0)b.vx=-b.vx*P.e;}
     if(b.y<B.yT+B.ballR)b.y=B.yT+B.ballR;}
   for(const b of balls){if(b.landed)continue;
@@ -527,8 +536,10 @@ const onHit=(p,r,sp)=>{p.f=1;if(sp>1.2)sTick(r);};
 const onBall=(a,b,sp)=>sClack(sp);
 /* Read-only helpers for curious players and tests (cannot touch your balance) */
 window.plinkoLab=Object.freeze({params:Object.freeze({...PHYS}),
-  tables:()=>{const o={};for(let r=8;r<=16;r++)o[r]=multsFor(r);return o;},
-  odds:r=>({p:oddsFor(r),rtp:rtpFor(r)}),
+  tables:rtp=>{const o={};for(let r=8;r<=16;r++)o[r]=multsFor(r,rtp);return o;},
+  odds:(r,rtp)=>({p:oddsFor(r),rtp:rtpFor(r,rtp)}),
+  setting:()=>curRtp(),
+  board:()=>({W,H,s,sp:B.sp,slotY,slotX:Array.from({length:rows+1},(_,k)=>B.slotX(k)),wallBottom:B.wallX(slotY)}),
   lastDrop:()=>lastResult&&({...lastResult}),
   /* landed: balls finished; mismatch: balls whose physical slot differed from the assigned one (should stay 0) */
   check:()=>({...landCheck}),
@@ -568,17 +579,17 @@ function drop(quiet){if(balls.length>=MAX_BALLS||performance.now()<fullUntil){if
   /* appear right away; if another ball is sitting at the release point, start just above it */
   for(let pass=0;pass<4;pass++){let moved=false;for(const o of balls){if(Math.abs(o.x-nb.x)<2*ballR&&Math.abs(o.y-nb.y)<2*ballR){nb.y=o.y-2*ballR;moved=true;}}if(!moved)break;}
   if(nb.y<B.yT+ballR)nb.y=B.yT+ballR;
-  nb.bet=b;nb.rows=rows;nb.trail=[];nb.sd=(path.reduce((a,d,i)=>a+(d>0?i*7:i),0))%10;balls.push(nb);ac();
+  nb.bet=b;nb.rows=rows;nb.m=mults[nb.k];nb.trail=[];nb.sd=(path.reduce((a,d,i)=>a+(d>0?i*7:i),0))%10;balls.push(nb);ac();
   updateUI();save();return true;}
 /* payout always uses the slot assigned at drop (ball.k); ph is where the physics put it, tracked only as a self-check */
 /* how special a hit is on THIS board, by how rare it is: 0 = the board's top prize (jackpot), 1 = rarer than 1 in 150
    (banner), 2 = rarer than 1 in 25 and at least 2x (confetti), 3 = normal */
 function tierOf(m){const top=Math.max(...mults);if(m>=top)return 0;const p=oddsFor(rows).reduce((a,x,k)=>a+(mults[k]===m?x:0),0);return p<=1/150?1:p<=1/25&&m>=2?2:3;}
 function land(b,ph,forced){b.landed=true;const k=b.k;landCheck.landed++;if(forced)landCheck.forced++;else if(ph!==k)landCheck.mismatch++;
-  lastResult={rows,slot:k,physSlot:forced?k:ph,mult:mults[k]};const m=mults[k],win=r2(b.bet*m);S.balance=r2(S.balance+win);S.stats.won=r2(S.stats.won+win);
+  const m=b.m>0?b.m:mults[k];lastResult={rows,slot:k,physSlot:forced?k:ph,mult:m};const win=r2(b.bet*m);S.balance=r2(S.balance+win);S.stats.won=r2(S.stats.won+win);
   const st=S.stats;st.best=Math.max(st.best,m);if(win-b.bet>st.biggest)st.biggest=r2(win-b.bet);st.hits[m]=(st.hits[m]||0)+1;
   S.recent.unshift(m);S.recent=S.recent.slice(0,20);slotAnim[k]=1;
-  const x=W/2+(k-rows/2)*s;const tier=tierOf(m);if(m>=1||balls.length<25)floats.push({x,y:slotY-s*.2,t:'+'+fmt(win),c:multCol(m),life:1,m,big:tier<=2}); /* busy board: skip tiny wins so labels stay readable */
+  const x=B.slotX(k);const tier=tierOf(m);if(m>=1||balls.length<25)floats.push({x,y:slotY-s*.2,t:'+'+fmt(win),c:multCol(m),life:1,m,big:tier<=2}); /* busy board: skip tiny wins so labels stay readable */
   if(tier<=2)celebrate(m,win,x,tier);else sLand(m);
   updateUI(true);addRecent(m);save();}
 function celebrate(m,win,x,tier){sBig(tier===0);if(!S.fx)return;const rect=cv.getBoundingClientRect();const sx=rect.left+x*scale,sy=rect.top+slotY*scale;
@@ -672,7 +683,7 @@ function frame(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;const t=no
   const c=cx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);c.setTransform(scale*dpr,0,0,scale*dpr,0,0);
   const sk=BOARD[S.equip.board];if(sk.bg)sk.bg(c,W,H,s,t);
   /* walls + the drop chute above the top row */
-  c.strokeStyle='rgba(255,255,255,.07)';c.lineWidth=s*.05;c.lineCap='round';c.beginPath();for(const w of B.walls){c.moveTo(w.x1,w.y1);c.lineTo(w.x2,w.y2-s*.6);}c.stroke();
+  c.strokeStyle='rgba(255,255,255,.07)';c.lineWidth=s*.05;c.lineCap='round';c.beginPath();for(const w of B.walls){c.moveTo(w.x1,w.y1);c.lineTo(w.x2,w.y2===B.slotY?w.y2-s*.25:w.y2);}c.stroke();
   {const hx=B.wallX(top0),dy=top0-DROP_H[S.dropH]*s;const g=c.createLinearGradient(0,B.yT,0,top0);g.addColorStop(0,'rgba(124,92,255,.10)');g.addColorStop(1,'rgba(124,92,255,0)');c.fillStyle=g;c.fillRect(W/2-hx,B.yT,hx*2,top0-B.yT);
     c.strokeStyle='rgba(255,255,255,.16)';c.lineWidth=s*.025;c.setLineDash([s*.08,s*.1]);c.beginPath();c.moveTo(W/2-hx*.8,dy);c.lineTo(W/2+hx*.8,dy);c.stroke();c.setLineDash([]);}
   if(!pegSprite&&sk.peg)pegSprite=makePegSprite();const ps=pegR*4;
@@ -681,9 +692,9 @@ function frame(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;const t=no
     else{disc(c,p.x,p.y,pegR*(1+p.f*.35),p.f>.05?'#fff':`hsl(${(t*60+p.x*.25+p.y*.35)%360},95%,68%)`);}
     p.f=Math.max(0,p.f-dt*3.2);}
   /* slots */
-  const fs=s*.34;c.textAlign='center';c.textBaseline='middle';
-  for(let i=0;i<=rows;i++){const m=mults[i],x=W/2+(i-rows/2)*s,a=slotAnim[i],oy=Math.sin(a*Math.PI)*s*.18,sw=s*.88,y=slotY+oy;
-    if(a>0)glow(c,x,y+slotH/2,s*1.1,multCol(m,.45*a));
+  const fs=Math.min(B.sp,s*1.15)*.34;c.textAlign='center';c.textBaseline='middle';
+  for(let i=0;i<=rows;i++){const m=mults[i],x=B.slotX(i),a=slotAnim[i],oy=Math.sin(a*Math.PI)*s*.18,sw=B.sp*.9,y=slotY+oy;
+    if(a>0)glow(c,x,y+slotH/2,B.sp*1.1,multCol(m,.45*a));
     c.fillStyle=multCol(m,1);roundRect(c,x-sw/2,y,sw,slotH,s*.12);c.fill();
     const lg=c.createLinearGradient(0,y,0,y+slotH);lg.addColorStop(0,'rgba(255,255,255,.28)');lg.addColorStop(.5,'rgba(255,255,255,0)');lg.addColorStop(1,'rgba(0,0,0,.22)');c.fillStyle=lg;roundRect(c,x-sw/2,y,sw,slotH,s*.12);c.fill();
     c.fillStyle='rgba(10,8,20,.92)';const txt=m+'×';let f=fs;c.font=`800 ${f}px ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial`;const tw=c.measureText(txt).width;if(tw>sw*.86){f*=sw*.86/tw;c.font=`800 ${f}px ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial`;}
@@ -742,12 +753,17 @@ function coinField(inp,desc,apply){const el=$(inp),d=$(desc);const go=()=>{const
   el.addEventListener('input',()=>{el.classList.remove('bad');});return go;}
 $('#coinsSet').onclick=coinField('#coinsIn','#coinsD',n=>{S.balance=n;shownBal=n;$('#balVal').textContent=fmt(n);toast('Balance set to '+fmtInt(n)+' coins');tone(660,.1,'triangle',.05);});
 $('#startSet').onclick=coinField('#startIn','#startD',n=>{S.startBal=n;$('#resetD').textContent='Back to '+fmtInt(n)+' coins. Clears items and stats.';toast('Starting balance: '+fmtInt(n)+' coins');});
-function renderSettings(){$$('#dropH [data-h]').forEach(b=>b.classList.toggle('on',b.dataset.h===S.dropH));const f=$('#autoFast');f.classList.toggle('on',!!S.autoFast);f.textContent=S.autoFast?'Speed: fast':'Speed: normal';}
+function renderRtp(){$('#rtpVal').textContent=S.rtp+'%';$$('#rtpSet [data-rtp]').forEach(b=>b.disabled=+b.dataset.rtp<0?S.rtp<=RTP_MIN:S.rtp>=RTP_MAX);
+  $('#rtpD').textContent=S.rtp===RTP_DEFAULT?'How much the game pays back over time. Lower is harder. Default 97%.':`Pays back ${S.rtp}% over time (default 97%). Lower is harder.`;}
+function renderSettings(){renderRtp();$$('#dropH [data-h]').forEach(b=>b.classList.toggle('on',b.dataset.h===S.dropH));const f=$('#autoFast');f.classList.toggle('on',!!S.autoFast);f.textContent=S.autoFast?'Speed: fast':'Speed: normal';}
+$('#rtpSet').addEventListener('click',e=>{const b=e.target.closest('[data-rtp]');if(!b||b.disabled)return;
+  if(balls.some(x=>!x.landed)){toast('Wait for balls to land');sNo();return;}
+  const v=clamp(S.rtp+(+b.dataset.rtp),RTP_MIN,RTP_MAX);if(v===S.rtp)return;S.rtp=v;build();renderRtp();updateUI();save();tone(440+(v-RTP_MIN)*40,.06,'triangle',.04);});
 $('#dropH').addEventListener('click',e=>{const b=e.target.closest('[data-h]');if(!b)return;S.dropH=b.dataset.h;renderSettings();save();tone(440+['low','medium','high'].indexOf(S.dropH)*180,.06,'triangle',.04);});
 $('#autoFast').onclick=()=>{S.autoFast=!S.autoFast;renderSettings();save();restartAuto();toast(S.autoFast?'Auto-drop: fast (10 balls/sec)':'Auto-drop: normal (4 balls/sec)');};
 $('#btnSettings').onclick=()=>{syncCoinsUI();renderSettings();openModal('#mSettings');};
 let armT=0;$('#reset').onclick=e=>{const b=e.currentTarget;if(!b.classList.contains('armed')){b.classList.add('armed');b.textContent='Tap again to confirm';clearTimeout(armT);armT=setTimeout(()=>{b.classList.remove('armed');b.textContent='Reset';},3500);return;}
-  clearTimeout(armT);b.classList.remove('armed');b.textContent='Reset';stopAuto();balls=[];const sb=S.startBal;S=clone(DEF);S.startBal=sb;S.balance=sb;try{localStorage.removeItem(KEY);}catch(e){}save();shownBal=S.balance;$('#balVal').textContent=fmt(S.balance);
+  clearTimeout(armT);b.classList.remove('armed');b.textContent='Reset';stopAuto();balls=[];const sb=S.startBal,rt=S.rtp;S=clone(DEF);S.startBal=sb;S.rtp=rt;S.balance=sb;try{localStorage.removeItem(KEY);}catch(e){}save();shownBal=S.balance;$('#balVal').textContent=fmt(S.balance);
   $('#bet').value=S.bet;setRowsUI();build();bgDirty=true;renderRecent();muteIcon();renderSettings();updateUI();closeModals();toast('Progress reset — '+fmtInt(S.startBal)+' coins');syncCoinsUI();};
 $('#btnStats').onclick=()=>{const st=S.stats,net=r2(st.won-st.wagered);const rtp=st.wagered?(st.won/st.wagered*100).toFixed(1)+'%':'–';
   const items=[['Balls dropped',st.dropped.toLocaleString('en-US')],['Net',`<span class="${net>0?'pos':net<0?'neg':''}">${net>0?'+':''}${fmt(net)}</span>`],['Total bet',COIN+' '+fmt(st.wagered)],['Total won',COIN+' '+fmt(st.won)],
@@ -758,7 +774,7 @@ $('#btnStats').onclick=()=>{const st=S.stats,net=r2(st.won-st.wagered);const rtp
   openModal('#mStats');};
 
 function renderInfo(){const p=oddsFor(rows).map(x=>x*100),mx=Math.max(...p);$('#infoRows').textContent=rows;$('#infoRtp').textContent='returns '+(rtpFor(rows)*100).toFixed(2)+'%';
-  $('#infoRtpTable').innerHTML=Object.keys(HALF).map(r=>{const q=oddsFor(+r);return`<div class="mini${+r===rows?' cur':''}"><div class="k">${r} rows · ${HALF[r][0]}× is 1 in ${fmtInt(1/(2*q[0]))} · ${Math.round(multsFor(+r).filter(x=>x>=1).length/(+r+1)*100)}% of slots pay ≥1×</div><div class="v">${(rtpFor(+r)*100).toFixed(2)}%</div></div>`;}).join('');
+  $('#infoRtpTable').innerHTML=Object.keys(HALF).map(r=>{const q=oddsFor(+r);return`<div class="mini${+r===rows?' cur':''}"><div class="k">${r} rows · ${multsFor(+r)[0]}× is 1 in ${fmtInt(1/(2*q[0]))} · ${Math.round(multsFor(+r).filter(x=>x>=1).length/(+r+1)*100)}% of slots pay ≥1×</div><div class="v">${(rtpFor(+r)*100).toFixed(2)}%</div></div>`;}).join('');
   $('#infoBars').innerHTML=mults.map((m,i)=>`<div class="c" title="${m}×: ${p[i].toPrecision(3)}%"><div class="b" style="height:${Math.max(1.5,p[i]/mx*78)}%;background:${multCol(m)}"></div><div class="m">${m}</div><div class="q">${p[i]<0.01?'<.01':p[i]<1?p[i].toFixed(2):p[i].toFixed(1)}</div></div>`).join('');}
 $('#btnInfo').onclick=()=>{renderInfo();openModal('#mInfo');};
 let rT=0;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{sizeBg();sizeFx();sizeBoard();},60);});
@@ -767,7 +783,7 @@ if(window.ResizeObserver)new ResizeObserver(()=>{clearTimeout(rT);rT=setTimeout(
 /* init */
 $('#bet').value=S.bet;setRowsUI();sizeBg();sizeFx();build();
 {const saved=Array.isArray(S.inflight)?S.inflight.filter(o=>o&&o.bet>0&&Number.isInteger(o.k)&&HALF[o.rows]&&o.k>=0&&o.k<=o.rows):[];S.inflight=[];
-  if(saved.length){let tot=0;for(const o of saved){const m=multsFor(o.rows)[o.k],win=r2(o.bet*m);tot=r2(tot+win);S.balance=r2(S.balance+win);S.stats.won=r2(S.stats.won+win);
+  if(saved.length){let tot=0;for(const o of saved){const m=o.m>0?o.m:multsFor(o.rows)[o.k],win=r2(o.bet*m);tot=r2(tot+win);S.balance=r2(S.balance+win);S.stats.won=r2(S.stats.won+win);
       const st=S.stats;st.best=Math.max(st.best,m);if(win-o.bet>st.biggest)st.biggest=r2(win-o.bet);st.hits[m]=(st.hits[m]||0)+1;S.recent.unshift(m);}
     S.recent=S.recent.slice(0,20);save(true);setTimeout(()=>toast(saved.length+' ball'+(saved.length>1?'s':'')+' from last time landed: +'+fmt(tot)),400);}}
 renderRecent();muteIcon();renderSettings();updateUI();$('#balVal').textContent=fmt(S.balance);
