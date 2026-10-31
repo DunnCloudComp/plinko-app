@@ -95,6 +95,21 @@ input[type=range]:disabled{opacity:.45}
 .auto .qb.on{background:linear-gradient(135deg,#ff5470,#ff8a3d);border-color:transparent;color:#fff}
 .refill{display:none;height:46px;border-radius:12px;border:1px dashed rgba(255,200,61,.6);background:rgba(255,200,61,.08);color:var(--gold);font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:8px;animation:pulse 1.6s infinite}
 .refill.show{display:flex}
+.daily{height:46px;border-radius:12px;border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px}
+.daily.ready{border:0;color:#1a1200;background:linear-gradient(135deg,#ffd23f,#ff9a3d);box-shadow:0 8px 26px rgba(255,170,40,.35);animation:pulse 1.6s infinite}
+.daily .gift{font-size:18px}
+.dsheet .sbody{text-align:center}
+.dhero{padding:6px 0 10px}.dsub{color:var(--muted);font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:12px}
+.damt{display:flex;align-items:center;justify-content:center;gap:10px;font-size:44px;font-weight:950;color:var(--gold);font-variant-numeric:tabular-nums;margin-top:6px}.damt .coin{width:40px;height:40px}
+.dpips{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:8px 0 14px}
+.dpip{border-radius:10px;padding:7px 2px;background:rgba(0,0,0,.3);border:1px solid var(--line);font-size:10.5px;font-weight:800;color:var(--muted);line-height:1.25}
+.dpip b{display:block;color:#fff;font-size:12px;font-variant-numeric:tabular-nums}.dpip.done{background:rgba(46,229,157,.12);border-color:rgba(46,229,157,.5)}.dpip.cur{background:rgba(255,200,61,.16);border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,200,61,.25)}
+.dclaim{width:100%;height:54px;border:0;border-radius:14px;font-size:19px;font-weight:950;letter-spacing:.04em;color:#1a1200;background:linear-gradient(135deg,#ffd23f,#ff9a3d);cursor:pointer;box-shadow:0 10px 30px rgba(255,170,40,.35)}
+.dclaim:disabled{background:var(--panel3);color:var(--muted);box-shadow:none;cursor:default}
+.bkta{width:100%;height:74px;resize:none;border-radius:11px;border:1px solid var(--line2);background:rgba(0,0,0,.35);color:#fff;font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;padding:8px;word-break:break-all;-webkit-user-select:text;user-select:text}
+.bkrow{display:flex;align-items:center;gap:10px;margin-top:8px}.bkrow .d{font-size:12px;color:var(--muted)}.bkrow .d.err{color:#ff8197}.bkrow .d.ok{color:var(--green)}
+.nudge{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:75;display:none;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;background:linear-gradient(180deg,rgba(36,40,60,.98),rgba(22,25,38,.98));border:1px solid rgba(124,92,255,.55);box-shadow:0 18px 50px rgba(0,0,0,.55);max-width:520px;margin:0 auto}
+.nudge.show{display:flex;animation:rise .3s cubic-bezier(.2,1.2,.4,1)}.nudge .nt{display:flex;flex-direction:column;gap:3px;font-size:13px;line-height:1.35;color:#d9dcf0}.nudge .nt>b{font-size:14px;color:#fff}.nudge .sbtn{white-space:nowrap;flex:none}.nudge .shr{display:inline-block;padding:0 4px;border-radius:5px;background:rgba(255,255,255,.12)}
 @keyframes pulse{50%{box-shadow:0 0 0 6px rgba(255,200,61,.12)}}
 .minis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mini{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:9px 11px}
@@ -239,6 +254,7 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line2);border-bottom-wi
         <div class="lbl"><span>Auto drop <span id="autoStatus"></span></span><button class="chip" id="autoFast" title="Auto-drop speed">Speed: normal</button></div>
         <div class="auto"><button class="qb" data-auto="10">10</button><button class="qb" data-auto="50">50</button><button class="qb" data-auto="inf">∞</button></div>
       </div>
+      <button class="daily" id="dailyBtn"><span class="gift">🎁</span><span id="dailyT">Daily coins</span></button>
       <button class="refill" id="refill"><svg class="coin"><use href="#coin"/></svg><span id="refillT">Free refill to 1,000</span></button>
       <div class="minis">
         <div class="mini"><div class="k">Balls dropped</div><div class="v" id="mDropped">0</div></div>
@@ -269,7 +285,7 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line2);border-bottom-wi
     <div id="infoBars" class="ibars"></div>
     <div class="lbl" style="margin-top:14px"><span>Return to player · every board</span></div>
     <div class="statgrid" id="infoRtpTable"></div>
-    <p class="note">The top prize grows with the board because edges get rarer with every row. Every board pays back the return you pick in Settings (97% unless you change it), to within 0.05 percentage points. Coins are pretend and can't be bought or cashed out.</p>
+    <p class="note">The top prize grows with the board because edges get rarer with every row. Most balls land near the middle, where slots pay less than 1×, so only about 1 in 7 to 1 in 3 balls (depending on rows) pays back 1× or more. The rare edge hits make up the rest. Every board pays back the return you pick in Settings (97% unless you change it), to within 0.05 percentage points. Coins are pretend and can't be bought or cashed out.</p>
   </div>
 </div></div>
 
@@ -277,6 +293,31 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line2);border-bottom-wi
   <div class="shead"><h2>Stats</h2><div class="spacer"></div><button class="ibtn" data-close>✕</button></div>
   <div class="sbody"><div class="statgrid" id="statgrid"></div><div class="hist" id="hist"></div></div>
 </div></div>
+
+<div class="modal" id="mDaily"><div class="sheet sm dsheet">
+  <div class="shead"><h2>Daily coins</h2><div class="spacer"></div><button class="ibtn" data-close>✕</button></div>
+  <div class="sbody">
+    <div class="dhero"><div class="dsub" id="dSub">Day 1 of your streak</div><div class="damt"><svg class="coin"><use href="#coin"/></svg><span id="dAmt">+500</span></div></div>
+    <div class="dpips" id="dPips"></div>
+    <button class="dclaim" id="dClaim">Claim</button>
+    <p class="note" id="dNote">Free coins every day: about a full session of drops at your usual bet. Come back tomorrow for more. Miss one day and your streak waits for you; miss two and it starts again at day 1.</p>
+  </div>
+</div></div>
+
+<div class="modal" id="mBackup"><div class="sheet sm">
+  <div class="shead"><h2>Backup</h2><div class="spacer"></div><button class="ibtn" data-close>✕</button></div>
+  <div class="sbody">
+    <div class="lbl"><span>Your save code</span></div>
+    <textarea id="bkOut" class="bkta" readonly aria-label="Your save code"></textarea>
+    <div class="bkrow"><button class="sbtn" id="bkCopy">Copy code</button><span class="d" id="bkCopyD">Keep it somewhere safe, like Notes.</span></div>
+    <div class="lbl" style="margin-top:16px"><span>Restore from a code</span></div>
+    <textarea id="bkIn" class="bkta" placeholder="Paste a save code here" aria-label="Paste a save code"></textarea>
+    <div class="bkrow"><button class="danger" id="bkRestore">Restore</button><span class="d" id="bkRestoreD">Replaces the coins, items, stats and settings on this device.</span></div>
+    <p class="note">The code holds your whole save: coins, items, stats, streak and settings. Nothing is sent anywhere.</p>
+  </div>
+</div></div>
+
+<div class="nudge" id="nudge" role="dialog" aria-label="Keep your coins safe"><div class="nt"><b>Keep your coins safe</b><span>Safari can clear saved games for websites. Tap <b>Share</b> <span class="shr">⬆︎</span> then <b>Add to Home Screen</b> to play from your home screen, where coins stay put.</span></div><button class="sbtn" id="nudgeOk">Got it</button></div>
 
 <div class="modal" id="mSettings"><div class="sheet sm">
   <div class="shead"><h2>Settings</h2><div class="spacer"></div><button class="ibtn" data-close>✕</button></div>
@@ -288,8 +329,9 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line2);border-bottom-wi
     <div class="setrow"><div><div class="t">Return</div><div class="d" id="rtpD">How much the game pays back over time. Lower is harder.</div></div><div class="seg rtpset" id="rtpSet"><button data-rtp="-1" aria-label="Lower return">−</button><span id="rtpVal">97%</span><button data-rtp="1" aria-label="Higher return">+</button></div></div>
     <div class="setrow"><div><div class="t">Coins</div><div class="d" id="coinsD">Set your balance to any amount</div></div><div class="numset"><input id="coinsIn" inputmode="numeric" autocomplete="off" aria-label="Coins"><button class="sbtn" id="coinsSet">Set</button></div></div>
     <div class="setrow"><div><div class="t">Starting balance</div><div class="d" id="startD">Used by Reset, and Refill tops you back up to it</div></div><div class="numset"><input id="startIn" inputmode="numeric" autocomplete="off" aria-label="Starting balance"><button class="sbtn" id="startSet">Save</button></div></div>
+    <div class="setrow"><div><div class="t">Backup</div><div class="d" id="bkD">Save code to copy your coins to another device or restore them</div></div><button class="sbtn" id="btnBackup">Back up / Restore</button></div>
     <div class="setrow"><div><div class="t">Reset progress</div><div class="d" id="resetD">Back to 1,000 coins. Clears items and stats.</div></div><button class="danger" id="reset">Reset</button></div>
-    <div class="note">Everything is stored only in this browser (localStorage). Coins are purely virtual — there's no way to buy them or cash them out, and nothing is sent over the network.</div>
+    <div class="note"><span id="persistNote"></span>Everything is stored only in this browser (localStorage). Coins are purely virtual — there's no way to buy them or cash them out, and nothing is sent over the network.</div>
   </div>
 </div></div>
 
@@ -339,11 +381,15 @@ const MAXCOINS=1e12;
 const DEF={balance:1000,startBal:1000,bet:10,rows:16,rtp:RTP_DEFAULT,muted:false,fx:true,collide:true,dropH:'high',autoFast:false,inflight:[],
   owned:{ball:['classic'],board:['classic'],bg:['midnight'],trail:['none']},
   equip:{ball:'classic',board:'classic',bg:'midnight',trail:'none'},
-  stats:{dropped:0,wagered:0,won:0,best:0,biggest:0,refills:0,hits:{}},recent:[]};
+  stats:{dropped:0,wagered:0,won:0,best:0,biggest:0,refills:0,hits:{}},recent:[],
+  daily:{last:'',streak:0,total:0,claims:0},nudgeAt:0};
 const clone=o=>JSON.parse(JSON.stringify(o));
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const r=JSON.parse(raw);const s=clone(DEF);
+function sanitize(r){const s=clone(DEF);
   for(const k in r){if(k in s&&typeof s[k]==='object'&&!Array.isArray(s[k])&&r[k]&&typeof r[k]==='object')Object.assign(s[k],r[k]);else if(k in s)s[k]=r[k];}
-  if(!(s.balance>=0))s.balance=0; if(!(Number.isInteger(s.startBal)&&s.startBal>=1&&s.startBal<=MAXCOINS))s.startBal=1000; if(!HALF[s.rows])s.rows=16; if(!RTP_TABLES[s.rtp])s.rtp=RTP_DEFAULT; if(!['low','medium','high'].includes(s.dropH))s.dropH='high'; return s;}}catch(e){} return clone(DEF);}
+  if(!(s.balance>=0))s.balance=0; if(!(Number.isInteger(s.startBal)&&s.startBal>=1&&s.startBal<=MAXCOINS))s.startBal=1000; if(!HALF[s.rows])s.rows=16; if(!RTP_TABLES[s.rtp])s.rtp=RTP_DEFAULT; if(!['low','medium','high'].includes(s.dropH))s.dropH='high';
+  if(!(typeof s.daily.last==='string'&&/^\d{4}-\d{2}-\d{2}$|^$/.test(s.daily.last)))s.daily.last='';if(!(Number.isInteger(s.daily.streak)&&s.daily.streak>=0&&s.daily.streak<=7))s.daily.streak=0;
+  if(s.balance>MAXCOINS)s.balance=MAXCOINS; return s;}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw)return sanitize(JSON.parse(raw));}catch(e){} return clone(DEF);}
 let S=load();
 const fmtInt=n=>Math.round(n).toLocaleString('en-US');
 let saveT=0;
@@ -449,7 +495,7 @@ const BG={
    animates it: a gentle sideways "guide" force (never vertical) nudges the ball toward the peg side its path says,
    so ball-ball collisions jostle it but the guide always brings it back. Lengths below are in peg spacings s. */
 const PHYS={g:30,e:0.36,fr:0.1,drag:0.6,pegR:0.11,ballR:0.28,vs:0.9,wall:0.11,dt:1/240,bbE:0.15,bbIter:2,
-  stillWin:2,stillDist:0.3,stillN:2,maxT:40,dropMax:3.2,funnel:1.6,slotPad:0.08,amaxEnd:220,aim:0.3,K:300,C:34,Kend:300,Cend:35,amax:100,jit:0.04,calm:3,devOn:0.85,devOff:0.3,over:0.12,slackOn:2.01,phaseAt:-0.3};
+  stillWin:2,stillDist:0.3,stillN:2,maxT:40,dropMax:3.2,funnel:1.6,nearMiss:0.16,swingFrom:6,swingTo:10,swingMin:2,slotPad:0.08,amaxEnd:220,aim:0.3,K:300,C:34,Kend:300,Cend:35,amax:100,jit:0.04,calm:3,devOn:0.85,devOff:0.3,over:0.12,slackOn:2.01,phaseAt:-0.3};
 const DROP_H={low:1.1,medium:2.1,high:3.2}; /* spawn height above the top peg row, in peg spacings */
 /* Every board shows the same 16-row peg field (same pegs, spacing, camera and ball size). Only the win-slot row changes:
    a board set to n rows has n+1 slots stretched evenly across the full bottom width. */
@@ -467,11 +513,25 @@ function makeBoard(n,P){const rows=PEG_ROWS,W=1000,s=W/(rows+3),top0=s*(P.dropMa
   const sec=Math.hypot(1,(xrP-xr0)/(yP-top0)),secF=Math.hypot(1,(xrS-xrP)/(slotY-yP));
   return{W,s,sp,n,top0,vs,pegR,ballR,rows,pegs,yP,slotY,slotX,walls,g:P.g*s,yT,wallX,sec,secF};}
 /* The bounce route for a ball whose slot k (0..n) was already drawn. The ball leaves the 16-row peg field at the peg column
-   nearest the centre of its wide slot, then the funnel carries it to the slot centre.
-   Which rows it bounces right on is shuffled (cosmetic only: rnd is any 0..1 source); the payout never depends on it. */
-function routeFor(B,k,rnd){const j=Math.max(0,Math.min(B.rows,Math.round((B.slotX(k)-B.W/2)/B.s+B.rows/2)));
-  const path=[];for(let i=0;i<B.rows;i++)path.push(i<j?1:-1);
-  for(let i=path.length-1;i>0;i--){const r=Math.floor(rnd()*(i+1));const t=path[i];path[i]=path[r];path[r]=t;}return path;}
+   nearest the centre of its wide slot, then the funnel carries it to the slot centre. Only the route is random here
+   (rnd is any 0..1 source); the payout never depends on it.
+   Most balls take a plain shuffled route. A few (P.nearMiss) swing out toward an edge first, peaking somewhere in rows
+   P.swingFrom..P.swingTo, then work back to their column: a "could this be a big one?" moment that stays a fair-looking
+   bounce path (one peg column per row, always able to reach its slot). */
+function routeFor(B,k,rnd,P){P=P||PHYS;const R=B.rows,j=Math.max(0,Math.min(R,Math.round((B.slotX(k)-B.W/2)/B.s+R/2)));
+  const seg=(rights,len)=>{const a=[];for(let i=0;i<len;i++)a.push(i<rights?1:-1);for(let i=a.length-1;i>0;i--){const r=Math.floor(rnd()*(i+1));const t=a[i];a[i]=a[r];a[r]=t;}return a;};
+  if(rnd()<P.nearMiss){
+    const m=P.swingFrom+Math.floor(rnd()*(P.swingTo-P.swingFrom+1));                 /* row where the swing peaks */
+    const rR=Math.min(m,j),rL=m-Math.min(m,R-j);                                      /* most rights / fewest rights possible by row m */
+    const posR=(2*rR-m)/2,posL=(2*rL-m)/2,fin=j-R/2;                                  /* peg column at the peak, and the final column */
+    const gR=posR-fin*m/R,gL=fin*m/R-posL;                                            /* how far each swing strays from a straight route */
+    let d=gR>=P.swingMin&&gL>=P.swingMin?(rnd()<.5?1:-1):gR>=gL?1:-1;
+    if((d>0?gR:gL)>=P.swingMin){let r1=d>0?rR:rL;if(rnd()<.5)r1-=d;                 /* stop one column short now and then */
+      r1=Math.max(Math.max(0,j-(R-m)),Math.min(Math.min(m,j),r1));
+      const maj=d>0?r1:m-r1,few=m-maj,head=new Array(few).fill(-d);                 /* the odd step the other way happens early */
+      const out=head.concat(new Array(maj).fill(d));                                 /* ...then a run out along the edge */
+      return out.concat(seg(j-r1,R-m));}}                                            /* ...and a shuffled drift back */
+  return seg(j,R);}
 /* path: array of -1/+1 (left/right) per row, already decided. k = assigned slot = number of rights. */
 function makeBall(B,path,dropH,jit){const c=[0];for(let i=0;i<path.length;i++)c.push(c[i]+path[i]);
   const x=B.W/2+(jit||0)*B.s,y=B.top0-dropH*B.s;
@@ -551,6 +611,7 @@ window.plinkoLab=Object.freeze({params:Object.freeze({...PHYS}),
   tables:rtp=>{const o={};for(let r=8;r<=16;r++)o[r]=multsFor(r,rtp);return o;},
   odds:(r,rtp)=>({p:oddsFor(r),rtp:rtpFor(r,rtp)}),
   setting:()=>curRtp(),
+  daily:()=>({...dailyStatus(),amount:dailyAmount(dailyStatus().streak),saved:{...S.daily}}),
   board:()=>({W,H,s,sp:B.sp,pegRows:B.rows,pegCount:B.pegs.reduce((a,r)=>a+r.length,0),ballR,pegR,slotX:Array.from({length:rows+1},(_,k)=>B.slotX(k)),wallBottom:B.wallX(slotY)}),
   lastDrop:()=>lastResult&&({...lastResult}),
   /* landed: balls finished; mismatch: balls whose physical slot differed from the assigned one (should stay 0) */
@@ -578,7 +639,7 @@ function burst(x,y,n,power,mega){const pal=mega?['#ff5ecf','#ffd23f','#5cffc0','
 /* ---------- Game state (runtime) ---------- */
 let balls=[],floats=[],parts=[],shownBal=S.balance;
 function getBet(){const v=parseFloat($('#bet').value);return isFinite(v)?r2(v):NaN;}
-function setBet(v){v=r2(clamp(v,0.1,Math.max(0.1,1e15)));$('#bet').value=v;S.bet=v;save();validate();}
+function setBet(v){v=r2(clamp(v,0.1,Math.max(0.1,1e15)));$('#bet').value=v;S.bet=v;save();validate();if(typeof renderDailyBtn==='function')renderDailyBtn();}
 function validate(){const b=getBet();const bad=!(b>=0.1)||b>S.balance+1e-9;$('#betBox').classList.toggle('bad',bad&&b>S.balance);$('#betErr').classList.toggle('show',b>S.balance+1e-9);
   $('#drop').disabled=bad||performance.now()<fullUntil;$('#betHint').innerHTML=b>=0.1?`max win ${COIN} ${fmt(b*Math.max(...mults))}`:'';return!bad;}
 const MAX_BALLS=150;let fullUntil=0;
@@ -733,7 +794,7 @@ function frame(now){const dt=Math.min(.05,(now-lastT)/1000);lastT=now;const t=no
 /* ---------- Wiring ---------- */
 function setRowsUI(){const r=$('#rows');r.value=S.rows;$('#rowsVal').textContent=S.rows;r.style.setProperty('--p',((S.rows-8)/8*100)+'%');}
 $('#rows').addEventListener('input',e=>{if(balls.length){setRowsUI();return;}S.rows=+e.target.value;setRowsUI();build();updateUI();save();tone(500+S.rows*30,.05,'sine',.03);});
-$('#bet').addEventListener('input',()=>{const b=getBet();if(b>0)S.bet=b;save();validate();});
+$('#bet').addEventListener('input',()=>{const b=getBet();if(b>0)S.bet=b;save();validate();renderDailyBtn();});
 $('#bet').addEventListener('blur',()=>{const b=getBet();if(!(b>=0.1))setBet(Math.min(10,Math.max(0.1,S.balance)));else setBet(b);});
 $('#qHalf').onclick=()=>setBet(Math.max(0.1,(getBet()||S.bet)/2));
 $('#qDouble').onclick=()=>setBet(Math.max(0.1,Math.min((getBet()||S.bet)*2,Math.floor(S.balance*100)/100)));
@@ -743,6 +804,69 @@ cv.addEventListener('pointerdown',e=>{e.preventDefault();const r=cv.getBoundingC
   drop();});
 $$('[data-auto]').forEach(b=>b.onclick=()=>startAuto(b.dataset.auto));
 $('#refill').onclick=()=>{const add=r2(Math.max(0,S.startBal-S.balance));S.balance=r2(S.balance+add);S.stats.refills++;save();updateUI(true);tone(660,.1,'triangle',.05);tone(990,.14,'triangle',.05,.08);toast('+'+fmt(add)+' free coins');if(getBet()>S.balance)setBet(Math.min(10,S.balance));};
+/* ---------- Daily free coins (#6) ----------
+   Generous on purpose: one claim is about a full session of drops (50 balls) at your usual bet, at least 10, so a new
+   player gets 500. Each day in a row raises it, up to day 7 (2.5x), and it stays at the day-7 amount after that.
+   Missing one day keeps your streak where it was; missing two or more starts again at day 1.
+   Uses the phone's local date. If the clock moves back a day (time zones) you wait until the date catches up; if it
+   jumps back further (a clock that was wrong and got fixed) you can claim again and keep your streak. */
+const DAILY_MULT=[1,1.2,1.4,1.6,1.8,2,2.5];
+const dayKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const dayNum=k=>{const[y,m,d]=k.split('-').map(Number);return Math.round(Date.UTC(y,m-1,d)/864e5);};
+function dailyBase(){const b=getBet();return Math.min(1e9,50*Math.max(10,isFinite(b)?b:S.bet||10));}
+function dailyAmount(streak){return Math.max(10,Math.round(dailyBase()*DAILY_MULT[Math.min(7,Math.max(1,streak))-1]/10)*10);}
+function dailyStatus(now){const today=dayKey(now||new Date()),D=S.daily;
+  if(!D.last||!D.streak)return{ready:true,streak:1,today,gap:null};
+  const gap=dayNum(today)-dayNum(D.last);
+  if(gap===0||gap===-1)return{ready:false,streak:D.streak,today,gap};
+  if(gap<-1)return{ready:true,streak:D.streak,today,gap};
+  return{ready:true,streak:gap===1?Math.min(7,D.streak+1):gap===2?D.streak:1,today,gap};}
+function renderDailyBtn(){const st=dailyStatus(),b=$('#dailyBtn');b.classList.toggle('ready',st.ready);
+  if(st.ready)$('#dailyT').innerHTML=`Daily coins ready · +${fmt(dailyAmount(st.streak))}`;
+  else{const t=new Date(),m=new Date(t.getFullYear(),t.getMonth(),t.getDate()+(st.gap===-1?2:1)),mins=Math.max(1,Math.ceil((m-t)/6e4));
+    $('#dailyT').textContent=`Day ${st.streak} claimed · next in ${mins>=60?Math.floor(mins/60)+'h '+(mins%60)+'m':mins+'m'}`;}}
+function renderDaily(justClaimed){const st=dailyStatus(),cur=st.ready?st.streak:Math.min(7,st.streak+1);
+  $('#dPips').innerHTML=DAILY_MULT.map((_,i)=>{const d=i+1;const cls=st.ready?(d<cur?'done':d===cur?'cur':''):(d<=st.streak?'done':d===cur&&st.streak<7?'cur':'');
+    return `<div class="dpip ${cls}">${d===7?'Day 7+':'Day '+d}<b>${fmt(dailyAmount(d))}</b></div>`;}).join('');
+  if(st.ready){$('#dSub').textContent=st.gap===2?`Day ${st.streak} · you missed a day, so your streak waited for you`:st.gap>2?'Day 1 · new streak':`Day ${st.streak} of your streak`;
+    $('#dAmt').textContent='+'+fmt(dailyAmount(st.streak));$('#dClaim').disabled=false;$('#dClaim').textContent='Claim';}
+  else{$('#dSub').textContent=justClaimed?`Day ${st.streak} claimed!`:`Day ${st.streak} claimed today`;
+    $('#dAmt').textContent=justClaimed?'+'+fmt(justClaimed):'✓';$('#dClaim').disabled=true;$('#dClaim').textContent=`Tomorrow: +${fmt(dailyAmount(Math.min(7,st.streak+1)))}`;}}
+function claimDaily(){const st=dailyStatus();if(!st.ready)return 0;const amt=dailyAmount(st.streak);
+  S.balance=r2(Math.min(MAXCOINS,S.balance+amt));S.daily={last:st.today,streak:st.streak,total:r2((S.daily.total||0)+amt),claims:(S.daily.claims||0)+1};
+  save(true);updateUI(true);renderDaily(amt);renderDailyBtn();tone(660,.1,'triangle',.05);tone(880,.12,'triangle',.05,.08);tone(1320,.16,'triangle',.05,.16);
+  if(S.fx){const r=$('#dAmt').getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,70,520,false);}return amt;}
+let dailyShownFor='';
+function maybeShowDaily(){const st=dailyStatus();renderDailyBtn();if(!st.ready||dailyShownFor===st.today||$('.modal.open'))return;dailyShownFor=st.today;renderDaily();openModal('#mDaily');}
+$('#dailyBtn').onclick=()=>{renderDaily();openModal('#mDaily');};
+$('#dClaim').onclick=()=>claimDaily();
+setInterval(()=>{if(!document.hidden)maybeShowDaily();},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(maybeShowDaily,400);});
+
+/* ---------- Keep saved coins safe (#14) ---------- */
+/* Backup code: the whole save (minus balls in flight) as text. Restoring goes through the same checks as loading. */
+const BK_PREFIX='PLINKO1:';
+function saveCode(){const o=clone(S);delete o.inflight;return BK_PREFIX+btoa(unescape(encodeURIComponent(JSON.stringify(o))));}
+function readCode(t){t=String(t||'').replace(/\s+/g,'');if(!t.startsWith(BK_PREFIX))return null;
+  try{const o=JSON.parse(decodeURIComponent(escape(atob(t.slice(BK_PREFIX.length)))));if(!o||typeof o!=='object'||!(typeof o.balance==='number'))return null;return sanitize(o);}catch(e){return null;}}
+$('#btnBackup').onclick=()=>{$('#bkOut').value=saveCode();$('#bkIn').value='';$('#bkCopyD').className='d';$('#bkCopyD').textContent='Keep it somewhere safe, like Notes.';
+  $('#bkRestoreD').className='d';$('#bkRestoreD').textContent='Replaces the coins, items, stats and settings on this device.';closeModals();openModal('#mBackup');};
+$('#bkCopy').onclick=async()=>{const t=$('#bkOut');t.value=saveCode();let ok=false;try{await navigator.clipboard.writeText(t.value);ok=true;}catch(e){try{t.select();ok=document.execCommand('copy');}catch(e2){}}
+  $('#bkCopyD').className='d '+(ok?'ok':'');$('#bkCopyD').textContent=ok?'Copied. Paste it into Notes or a message to yourself.':'Select the code above and copy it.';t.select();};
+let bkArm=0;$('#bkRestore').onclick=e=>{const b=e.currentTarget,d=$('#bkRestoreD'),n=readCode($('#bkIn').value);
+  if(!n){d.className='d err';d.textContent='That code doesn\u2019t look right. Paste the whole code, starting with PLINKO1:';sNo();return;}
+  if(balls.some(x=>!x.landed)){d.className='d err';d.textContent='Wait for balls to land first.';sNo();return;}
+  if(!b.classList.contains('armed')){b.classList.add('armed');b.textContent='Tap to confirm';d.className='d';d.textContent=`Restore ${fmt(n.balance)} coins? This replaces this device\u2019s save.`;clearTimeout(bkArm);bkArm=setTimeout(()=>{b.classList.remove('armed');b.textContent='Restore';},4000);return;}
+  clearTimeout(bkArm);b.classList.remove('armed');b.textContent='Restore';stopAuto();balls=[];S=n;S.inflight=[];save(true);shownBal=S.balance;$('#balVal').textContent=fmt(S.balance);
+  $('#bet').value=S.bet;setRowsUI();build();bgDirty=true;renderRecent();muteIcon();renderSettings();updateUI();renderDailyBtn();closeModals();toast('Save restored: '+fmt(S.balance)+' coins');};
+/* Safari tab nudge: on iPhone/iPad in a normal Safari tab (not the home-screen app), suggest Add to Home Screen.
+   Shown at most once a week, and never over another window. */
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isStandalone=navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+function maybeNudge(){if(!isIOS||isStandalone||Date.now()-(S.nudgeAt||0)<7*864e5)return;if($('.modal.open')){setTimeout(maybeNudge,4000);return;}$('#nudge').classList.add('show');}
+$('#nudgeOk').onclick=()=>{$('#nudge').classList.remove('show');S.nudgeAt=Date.now();save();};
+function renderPersist(){const el=$('#persistNote');if(!navigator.storage||!navigator.storage.persisted){el.textContent='';return;}
+  navigator.storage.persisted().then(p=>{el.textContent=isStandalone?'Home-screen app: your coins stay on this device. ':p?'This browser will keep your save. ':'Tip: Add to Home Screen so Safari can\u2019t clear your coins, and keep a backup code. ';}).catch(()=>{});}
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&!(e.target instanceof HTMLInputElement)&&!$('.modal.open')){e.preventDefault();if(!e.repeat)drop();}if(e.key==='Escape')closeModals();});
 $('#btnStore').onclick=()=>{openModal('#mStore');renderStore();};
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){curTab=b.dataset.tab;renderStore();}});
@@ -773,9 +897,9 @@ $('#rtpSet').addEventListener('click',e=>{const b=e.target.closest('[data-rtp]')
   const v=clamp(S.rtp+(+b.dataset.rtp),RTP_MIN,RTP_MAX);if(v===S.rtp)return;S.rtp=v;build();renderRtp();updateUI();save();tone(440+(v-RTP_MIN)*40,.06,'triangle',.04);});
 $('#dropH').addEventListener('click',e=>{const b=e.target.closest('[data-h]');if(!b)return;S.dropH=b.dataset.h;renderSettings();save();tone(440+['low','medium','high'].indexOf(S.dropH)*180,.06,'triangle',.04);});
 $('#autoFast').onclick=()=>{S.autoFast=!S.autoFast;renderSettings();save();restartAuto();toast(S.autoFast?'Auto-drop: fast (10 balls/sec)':'Auto-drop: normal (4 balls/sec)');};
-$('#btnSettings').onclick=()=>{syncCoinsUI();renderSettings();openModal('#mSettings');};
+$('#btnSettings').onclick=()=>{syncCoinsUI();renderSettings();renderPersist();openModal('#mSettings');};
 let armT=0;$('#reset').onclick=e=>{const b=e.currentTarget;if(!b.classList.contains('armed')){b.classList.add('armed');b.textContent='Tap again to confirm';clearTimeout(armT);armT=setTimeout(()=>{b.classList.remove('armed');b.textContent='Reset';},3500);return;}
-  clearTimeout(armT);b.classList.remove('armed');b.textContent='Reset';stopAuto();balls=[];const sb=S.startBal,rt=S.rtp;S=clone(DEF);S.startBal=sb;S.rtp=rt;S.balance=sb;try{localStorage.removeItem(KEY);}catch(e){}save();shownBal=S.balance;$('#balVal').textContent=fmt(S.balance);
+  clearTimeout(armT);b.classList.remove('armed');b.textContent='Reset';stopAuto();balls=[];const sb=S.startBal,rt=S.rtp,dl=S.daily,nu=S.nudgeAt;S=clone(DEF);S.startBal=sb;S.rtp=rt;S.daily=dl;S.nudgeAt=nu;S.balance=sb;try{localStorage.removeItem(KEY);}catch(e){}save();shownBal=S.balance;$('#balVal').textContent=fmt(S.balance);
   $('#bet').value=S.bet;setRowsUI();build();bgDirty=true;renderRecent();muteIcon();renderSettings();updateUI();closeModals();toast('Progress reset — '+fmtInt(S.startBal)+' coins');syncCoinsUI();};
 $('#btnStats').onclick=()=>{const st=S.stats,net=r2(st.won-st.wagered);const rtp=st.wagered?(st.won/st.wagered*100).toFixed(1)+'%':'–';
   const items=[['Balls dropped',st.dropped.toLocaleString('en-US')],['Net',`<span class="${net>0?'pos':net<0?'neg':''}">${net>0?'+':''}${fmt(net)}</span>`],['Total bet',COIN+' '+fmt(st.wagered)],['Total won',COIN+' '+fmt(st.won)],
@@ -786,7 +910,7 @@ $('#btnStats').onclick=()=>{const st=S.stats,net=r2(st.won-st.wagered);const rtp
   openModal('#mStats');};
 
 function renderInfo(){const p=oddsFor(rows).map(x=>x*100),mx=Math.max(...p);$('#infoRows').textContent=rows;$('#infoRtp').textContent='returns '+(rtpFor(rows)*100).toFixed(2)+'%';
-  $('#infoRtpTable').innerHTML=Object.keys(HALF).map(r=>{const q=oddsFor(+r);return`<div class="mini${+r===rows?' cur':''}"><div class="k">${r} rows · ${multsFor(+r)[0]}× is 1 in ${fmtInt(1/(2*q[0]))} · ${Math.round(multsFor(+r).filter(x=>x>=1).length/(+r+1)*100)}% of slots pay ≥1×</div><div class="v">${(rtpFor(+r)*100).toFixed(2)}%</div></div>`;}).join('');
+  $('#infoRtpTable').innerHTML=Object.keys(HALF).map(r=>{const q=oddsFor(+r);return`<div class="mini${+r===rows?' cur':''}"><div class="k">${r} rows · ${multsFor(+r)[0]}× is 1 in ${fmtInt(1/(2*q[0]))} · ${Math.round(multsFor(+r).reduce((a,x,k)=>a+(x>=1?q[k]:0),0)*100)}% of balls pay 1× or more</div><div class="v">${(rtpFor(+r)*100).toFixed(2)}%</div></div>`;}).join('');
   $('#infoBars').innerHTML=mults.map((m,i)=>`<div class="c" title="${m}×: ${p[i].toPrecision(3)}%"><div class="b" style="height:${Math.max(1.5,p[i]/mx*78)}%;background:${multCol(m)}"></div><div class="m">${m}</div><div class="q">${p[i]<0.01?'<.01':p[i]<1?p[i].toFixed(2):p[i].toFixed(1)}</div></div>`).join('');}
 $('#btnInfo').onclick=()=>{renderInfo();openModal('#mInfo');};
 let rT=0;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{sizeBg();sizeFx();sizeBoard();},60);});
@@ -799,6 +923,7 @@ $('#bet').value=S.bet;setRowsUI();sizeBg();sizeFx();build();
       const st=S.stats;st.best=Math.max(st.best,m);if(win-o.bet>st.biggest)st.biggest=r2(win-o.bet);st.hits[m]=(st.hits[m]||0)+1;S.recent.unshift(m);}
     S.recent=S.recent.slice(0,20);save(true);setTimeout(()=>toast(saved.length+' ball'+(saved.length>1?'s':'')+' from last time landed: +'+fmt(tot)),400);}}
 renderRecent();muteIcon();renderSettings();updateUI();$('#balVal').textContent=fmt(S.balance);
+renderDailyBtn();setTimeout(maybeShowDaily,700);setTimeout(maybeNudge,5000);
 requestAnimationFrame(t=>{lastT=t;frame(t);});
 })();
 </script>
