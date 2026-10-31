@@ -105,6 +105,13 @@ input[type=range]:disabled{opacity:.45}
 .dpip{border-radius:10px;padding:7px 2px;background:rgba(0,0,0,.3);border:1px solid var(--line);font-size:10.5px;font-weight:800;color:var(--muted);line-height:1.25}
 .dpip b{display:block;color:#fff;font-size:12px;font-variant-numeric:tabular-nums}.dpip.done{background:rgba(46,229,157,.12);border-color:rgba(46,229,157,.5)}.dpip.cur{background:rgba(255,200,61,.16);border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,200,61,.25)}
 .dclaim{width:100%;height:54px;border:0;border-radius:14px;font-size:19px;font-weight:950;letter-spacing:.04em;color:#1a1200;background:linear-gradient(135deg,#ffd23f,#ff9a3d);cursor:pointer;box-shadow:0 10px 30px rgba(255,170,40,.35)}
+.adbox{border:1px dashed rgba(255,255,255,.25);border-radius:16px;padding:14px;margin-bottom:12px;background:repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 12px,rgba(255,255,255,.06) 12px 24px);text-align:center}
+.adtag{display:inline-block;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#1a1200;background:#ffd23f;border-radius:99px;padding:3px 10px;margin-bottom:10px}
+.adring{position:relative;width:110px;height:110px;margin:0 auto 8px}.adring svg{width:110px;height:110px;transform:rotate(-90deg)}
+.adring circle{fill:none;stroke-width:9}.adring .bgc{stroke:rgba(255,255,255,.1)}.adring .fgc{stroke:#22d3ee;stroke-linecap:round;stroke-dasharray:326.7;stroke-dashoffset:326.7;transition:stroke-dashoffset .25s linear}
+.adring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:950;font-variant-numeric:tabular-nums}
+.adcopy{font-size:12.5px;color:var(--muted)}
+.adbtn.ready{border-color:rgba(34,211,238,.6);color:#fff}
 .dclaim:disabled{background:var(--panel3);color:var(--muted);box-shadow:none;cursor:default}
 .bkta{width:100%;height:74px;resize:none;border-radius:11px;border:1px solid var(--line2);background:rgba(0,0,0,.35);color:#fff;font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;padding:8px;word-break:break-all;-webkit-user-select:text;user-select:text}
 .bkrow{display:flex;align-items:center;gap:10px;margin-top:8px}.bkrow .d{font-size:12px;color:var(--muted)}.bkrow .d.err{color:#ff8197}.bkrow .d.ok{color:var(--green)}
@@ -273,6 +280,7 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line2);border-bottom-wi
   <div class="shead"><h2>Menu</h2><div class="spacer"></div><button class="ibtn" data-close aria-label="Close menu">✕</button></div>
   <div class="sbody msheet">
     <button class="daily" id="dailyBtn"><span class="gift">🎁</span><span id="dailyT">Daily coins</span></button>
+    <button class="daily adbtn" id="adBtn"><span class="gift">📺</span><span id="adT">Watch an ad for coins</span></button>
       <div>
         <div class="lbl"><span>Risk</span><span id="riskNote"></span></div>
         <div class="seg riskset" id="riskSet" role="group" aria-label="Risk"><button data-risk="low">Low</button><button data-risk="medium">Medium</button><button data-risk="high">High</button><button data-risk="shuffle">Shuffle</button></div>
@@ -320,6 +328,17 @@ kbd{font:inherit;font-size:10.5px;border:1px solid var(--line2);border-bottom-wi
 <div class="modal" id="mStats"><div class="sheet sm">
   <div class="shead"><h2>Stats</h2><div class="spacer"></div><button class="ibtn" data-close>✕</button></div>
   <div class="sbody"><div class="statgrid" id="statgrid"></div><div class="hist" id="hist"></div></div>
+</div></div>
+
+<div class="modal" id="mAd"><div class="sheet sm dsheet">
+  <div class="shead"><h2>Watch an ad</h2><div class="spacer"></div><button class="ibtn" data-close aria-label="Close">✕</button></div>
+  <div class="sbody">
+    <div class="adbox" id="adBox"><div class="adtag">Stand-in ad · no real ad network</div><div class="adring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="bgc"/><circle cx="60" cy="60" r="52" class="fgc" id="adArc"/></svg><span id="adSec">15</span></div>
+      <div class="adcopy" id="adCopy">This is where a short video ad would play. Nothing is shown or tracked; it's a placeholder until a real ad network is chosen.</div></div>
+    <div class="dhero"><div class="dsub" id="adSub">Reward</div><div class="damt"><svg class="coin"><use href="#coin"/></svg><span id="adAmt">+500</span></div></div>
+    <button class="dclaim" id="adGo">Start</button>
+    <p class="note" id="adNote">Optional. Pays about a full session of drops at your bet (50 balls). Up to 3 a day, 10 minutes apart. Closing early gives nothing.</p>
+  </div>
 </div></div>
 
 <div class="modal" id="mDaily"><div class="sheet sm dsheet">
@@ -413,12 +432,15 @@ const DEF={balance:1000,startBal:1000,bet:10,rows:16,rtp:RTP_DEFAULT,risk:RISK_D
   owned:{ball:['classic'],board:['classic'],bg:['midnight'],trail:['none']},
   equip:{ball:'classic',board:'classic',bg:'midnight',trail:'none'},
   stats:{dropped:0,wagered:0,won:0,best:0,biggest:0,refills:0,hits:{}},recent:[],
-  daily:{last:'',streak:0,total:0,claims:0},nudgeAt:0};
+  daily:{last:'',streak:0,total:0,claims:0},ads:{day:'',count:0,last:0,total:0,watched:0},nudgeAt:0};
 const clone=o=>JSON.parse(JSON.stringify(o));
 function sanitize(r){const s=clone(DEF);
   for(const k in r){if(k in s&&typeof s[k]==='object'&&!Array.isArray(s[k])&&r[k]&&typeof r[k]==='object')Object.assign(s[k],r[k]);else if(k in s)s[k]=r[k];}
+  /* a damaged field must not throw (that would make load() fall back to a brand-new save): reset just that field */
+  for(const k in DEF){const d=DEF[k];if(d&&typeof d==='object'&&(!s[k]||typeof s[k]!=='object'||Array.isArray(s[k])!==Array.isArray(d)))s[k]=clone(d);}
   if(!(s.balance>=0))s.balance=0; if(!(Number.isInteger(s.startBal)&&s.startBal>=1&&s.startBal<=MAXCOINS))s.startBal=1000; if(!HALF[s.rows])s.rows=16; if(!RTP_TABLES[s.rtp])s.rtp=RTP_DEFAULT; if(!RISKS.includes(s.risk))s.risk=RISK_DEFAULT; if(!['low','medium','high'].includes(s.dropH))s.dropH='high';
   if(!(typeof s.daily.last==='string'&&/^\d{4}-\d{2}-\d{2}$|^$/.test(s.daily.last)))s.daily.last='';if(!(Number.isInteger(s.daily.streak)&&s.daily.streak>=0&&s.daily.streak<=7))s.daily.streak=0;
+  {const A=s.ads;if(!(typeof A.day==='string'&&/^\d{4}-\d{2}-\d{2}$|^$/.test(A.day)))A.day='';if(!(Number.isInteger(A.count)&&A.count>=0))A.count=0;if(!(A.last>=0))A.last=0;if(!(A.total>=0))A.total=0;if(!(Number.isInteger(A.watched)&&A.watched>=0))A.watched=0;}
   if(s.balance>MAXCOINS)s.balance=MAXCOINS; return s;}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw)return sanitize(JSON.parse(raw));}catch(e){} return clone(DEF);}
 let S=load();
@@ -883,8 +905,38 @@ let dailyShownFor='';
 function maybeShowDaily(){const st=dailyStatus();renderDailyBtn();if(!st.ready||dailyShownFor===st.today||$('.modal.open'))return;dailyShownFor=st.today;renderDaily();openModal('#mDaily');}
 $('#dailyBtn').onclick=()=>{renderDaily();openModal('#mDaily');};
 $('#btnBackupM').onclick=()=>$('#btnBackup').click();
-$('#btnMenu').onclick=()=>{renderRisk();setRowsUI();renderRtp();updateUI();openModal('#mMenu');};
+$('#btnMenu').onclick=()=>{renderAdBtn();renderRisk();setRowsUI();renderRtp();updateUI();openModal('#mMenu');};
 $('#dClaim').onclick=()=>claimDaily();
+/* ---------- Watch an ad for coins (#7) ----------
+   STAND-IN ONLY: no ad network, nothing is loaded, shown or tracked. AD_PROVIDER is the one place a real network would
+   plug in later (after Alec says yes): implement show({onComplete,onCancel}) so it calls onComplete() only when the ad
+   was watched to the end. The reward, cap and cooldown below stay the same whichever provider is used.
+   Rules: optional, only from the menu (never during play), pays only after the ad finishes, about a full session of
+   drops at your bet (same base as daily coins), up to AD_CAP a day and AD_GAP apart. Same at every Return setting (#16). */
+const AD_CAP=3,AD_GAP=10*60*1000,AD_SECS=15;
+const AD_PROVIDER={name:'stand-in',show({onComplete,onCancel}){let left=AD_SECS,done=false;const tick=()=>{if(done)return;
+    if(!$('#mAd').classList.contains('open')){done=true;clearInterval(t);onCancel();return;}
+    if(!document.hidden)left-=.25;const f=Math.max(0,left)/AD_SECS;$('#adArc').style.strokeDashoffset=String(326.7*f);$('#adSec').textContent=Math.max(0,Math.ceil(left));
+    if(left<=0){done=true;clearInterval(t);onComplete();}};const t=setInterval(tick,250);tick();}};
+const adAmount=()=>dailyBase();
+function adStatus(now){now=now||Date.now();const today=dayKey(new Date(now)),A=S.ads;const count=A.day===today?A.count:0;
+  const wait=Math.max(0,(A.last||0)+AD_GAP-now);const left=AD_CAP-count;return{today,count,left,wait:left>0?(wait>AD_GAP?0:wait):0,ready:left>0&&(wait<=0||wait>AD_GAP)};}
+let adPlaying=false;
+function renderAdBtn(){const st=adStatus(),b=$('#adBtn');b.classList.toggle('ready',st.ready);
+  $('#adT').textContent=st.left<=0?'Ad coins: come back tomorrow':st.ready?`Watch an ad · +${fmt(adAmount())} (${st.left} left today)`:`Next ad in ${Math.ceil(st.wait/60000)}m · ${st.left} left today`;}
+function renderAd(msg){const st=adStatus();$('#adAmt').textContent='+'+fmt(adAmount());$('#adArc').style.strokeDashoffset='326.7';$('#adSec').textContent=AD_SECS;
+  $('#adSub').textContent=msg||(st.left<=0?'All 3 watched today':st.ready?`Reward · ${st.left} of ${AD_CAP} left today`:`Next one in ${Math.ceil(st.wait/60000)} min`);
+  const g=$('#adGo');g.disabled=!st.ready;g.textContent=st.ready?'Start ad':st.left<=0?'Come back tomorrow':'Not yet';}
+function startAd(){const st=adStatus();if(!st.ready||adPlaying)return;adPlaying=true;$('#adGo').disabled=true;$('#adGo').textContent='Playing…';$('#adSub').textContent='Ad playing · keep this open';
+  AD_PROVIDER.show({onComplete(){adPlaying=false;const amt=adAmount(),now=Date.now(),s2=adStatus(now);
+      S.balance=r2(Math.min(MAXCOINS,S.balance+amt));S.ads={day:s2.today,count:s2.count+1,last:now,total:r2((S.ads.total||0)+amt),watched:(S.ads.watched||0)+1};
+      save(true);updateUI(true);renderAdBtn();renderAd(`Thanks for watching! +${fmt(amt)}`);$('#adSec').textContent='✓';
+      tone(660,.1,'triangle',.05);tone(990,.14,'triangle',.05,.08);if(S.fx){const r=$('#adAmt').getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,70,520,false);}
+      if(typeof onAchieve==='function')onAchieve();},
+    onCancel(){adPlaying=false;renderAdBtn();toast('Ad closed early: no coins this time');}});}
+$('#adBtn').onclick=()=>{renderAd();openModal('#mAd');};
+$('#adGo').onclick=startAd;
+setInterval(()=>{if(!document.hidden&&$('#mMenu').classList.contains('open'))renderAdBtn();},15000);
 setInterval(()=>{if(!document.hidden)maybeShowDaily();},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(maybeShowDaily,400);});
 
@@ -968,7 +1020,7 @@ $('#bet').value=S.bet;setRowsUI();sizeBg();sizeFx();build();
       const st=S.stats;st.best=Math.max(st.best,m);if(win-o.bet>st.biggest)st.biggest=r2(win-o.bet);st.hits[m]=(st.hits[m]||0)+1;S.recent.unshift(m);}
     S.recent=S.recent.slice(0,20);save(true);setTimeout(()=>toast(saved.length+' ball'+(saved.length>1?'s':'')+' from last time landed: +'+fmt(tot)),400);}}
 renderRecent();muteIcon();renderSettings();updateUI();$('#balVal').textContent=fmt(S.balance);
-renderDailyBtn();setTimeout(maybeShowDaily,700);setTimeout(maybeNudge,5000);
+renderDailyBtn();renderAdBtn();setTimeout(maybeShowDaily,700);setTimeout(maybeNudge,5000);
 requestAnimationFrame(t=>{lastT=t;frame(t);});
 })();
 </script>
