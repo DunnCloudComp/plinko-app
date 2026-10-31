@@ -495,7 +495,7 @@ const BG={
    animates it: a gentle sideways "guide" force (never vertical) nudges the ball toward the peg side its path says,
    so ball-ball collisions jostle it but the guide always brings it back. Lengths below are in peg spacings s. */
 const PHYS={g:30,e:0.36,fr:0.1,drag:0.6,pegR:0.11,ballR:0.28,vs:0.9,wall:0.11,dt:1/240,bbE:0.15,bbIter:2,
-  stillWin:2,stillDist:0.3,stillN:2,maxT:40,dropMax:3.2,funnel:1.6,nearMiss:0.16,swingFrom:6,swingTo:10,swingMin:2,slotPad:0.08,amaxEnd:220,aim:0.3,K:300,C:34,Kend:300,Cend:35,amax:100,jit:0.04,calm:3,devOn:0.85,devOff:0.3,over:0.12,slackOn:2.01,phaseAt:-0.3};
+  stillWin:2,stillDist:0.3,stillN:2,maxT:40,dropMax:3.2,funnel:1.6,nearMiss:0.33,swingFrom:7,swingTo:11,swingMin:2,holdMin:2,holdMax:4,slotPad:0.08,amaxEnd:220,aim:0.3,K:300,C:34,Kend:300,Cend:35,amax:100,jit:0.04,calm:3,devOn:0.85,devOff:0.3,over:0.12,slackOn:2.01,phaseAt:-0.3};
 const DROP_H={low:1.1,medium:2.1,high:3.2}; /* spawn height above the top peg row, in peg spacings */
 /* Every board shows the same 16-row peg field (same pegs, spacing, camera and ball size). Only the win-slot row changes:
    a board set to n rows has n+1 slots stretched evenly across the full bottom width. */
@@ -515,7 +515,7 @@ function makeBoard(n,P){const rows=PEG_ROWS,W=1000,s=W/(rows+3),top0=s*(P.dropMa
 /* The bounce route for a ball whose slot k (0..n) was already drawn. The ball leaves the 16-row peg field at the peg column
    nearest the centre of its wide slot, then the funnel carries it to the slot centre. Only the route is random here
    (rnd is any 0..1 source); the payout never depends on it.
-   Most balls take a plain shuffled route. A few (P.nearMiss) swing out toward an edge first, peaking somewhere in rows
+   Most balls take a plain shuffled route. About 1 in 3 (P.nearMiss) swing out toward an edge first, peaking somewhere in rows
    P.swingFrom..P.swingTo, then work back to their column: a "could this be a big one?" moment that stays a fair-looking
    bounce path (one peg column per row, always able to reach its slot). */
 function routeFor(B,k,rnd,P){P=P||PHYS;const R=B.rows,j=Math.max(0,Math.min(R,Math.round((B.slotX(k)-B.W/2)/B.s+R/2)));
@@ -526,11 +526,15 @@ function routeFor(B,k,rnd,P){P=P||PHYS;const R=B.rows,j=Math.max(0,Math.min(R,Ma
     const posR=(2*rR-m)/2,posL=(2*rL-m)/2,fin=j-R/2;                                  /* peg column at the peak, and the final column */
     const gR=posR-fin*m/R,gL=fin*m/R-posL;                                            /* how far each swing strays from a straight route */
     let d=gR>=P.swingMin&&gL>=P.swingMin?(rnd()<.5?1:-1):gR>=gL?1:-1;
-    if((d>0?gR:gL)>=P.swingMin){let r1=d>0?rR:rL;if(rnd()<.5)r1-=d;                 /* stop one column short now and then */
+    if((d>0?gR:gL)>=P.swingMin){let r1=d>0?rR:rL;if(rnd()<.25)r1-=d;                /* stop one column short now and then */
       r1=Math.max(Math.max(0,j-(R-m)),Math.min(Math.min(m,j),r1));
       const maj=d>0?r1:m-r1,few=m-maj,head=new Array(few).fill(-d);                 /* the odd step the other way happens early */
       const out=head.concat(new Array(maj).fill(d));                                 /* ...then a run out along the edge */
-      return out.concat(seg(j-r1,R-m));}}                                            /* ...and a shuffled drift back */
+      /* ...then hang out there for a few rows (zig-zag, so it stays just as far out), when there's room to still get back */
+      let h=P.holdMin+2*Math.floor(rnd()*((P.holdMax-P.holdMin)/2+1));
+      while(h>0&&!(j-r1-h/2>=0&&j-r1-h/2<=R-m-h))h-=2;
+      for(let i=0;i<h;i++)out.push(i%2?d:-d);
+      return out.concat(seg(j-r1-h/2,R-m-h));}}                                    /* ...and a shuffled drift back */
   return seg(j,R);}
 /* path: array of -1/+1 (left/right) per row, already decided. k = assigned slot = number of rights. */
 function makeBall(B,path,dropH,jit){const c=[0];for(let i=0;i<path.length;i++)c.push(c[i]+path[i]);
