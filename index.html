@@ -606,6 +606,8 @@ let toastT=0;function toast(msg){const t=$('#toast');t.textContent=msg;t.classLi
 let autoT=0,autoLeft=0,autoMode=null;
 function startAuto(mode){if(autoMode===mode){stopAuto();return;}stopAuto();autoMode=mode;autoLeft=mode==='inf'?Infinity:+mode;
   const tick=()=>{if(autoLeft<=0){stopAuto();return;}if(balls.length>=MAX_BALLS){$('#autoStatus').textContent='board full, waiting…';return;}
+    /* can't afford the next ball yet, but balls still falling will pay out: wait for them, then check again */
+    const bet=getBet();if(bet>=0.1&&bet>S.balance+1e-9&&balls.some(x=>!x.landed)){$('#autoStatus').textContent='waiting for balls to land…';return;}
     const r=drop(true);if(r==='full')return;if(!r){stopAuto();toast('Auto stopped — not enough coins');return;}autoLeft--;renderAuto();};
   tick();if(autoMode)autoT=setInterval(tick,S.autoFast?100:250);renderAuto();}
 function restartAuto(){if(!autoMode)return;const m=autoMode,l=autoLeft;stopAuto();startAuto(m);autoLeft=l;renderAuto();}

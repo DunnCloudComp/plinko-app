@@ -1,5 +1,5 @@
 /* Plinko offline support. Bump VERSION whenever any file below changes so phones pick up the new copy. */
-const VERSION = 'plinko-v1';
+const VERSION = 'plinko-v2';
 const SHELL = [
   './',
   './index.html',
